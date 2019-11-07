@@ -67,7 +67,7 @@ fineboost_get_csets <- function (ff,
       clus_med = c()
       presence_prop = c()
       for(k in 1:Lmax){
-        idx = which(W2[,k] > 0.8)
+        idx = which(W2[,k] > 0.5)
         if(length(idx) > 0){
           clus_med = rbind(clus_med, apply(ff$weights_path[idx, , drop=F], 2, median))
         }
@@ -156,13 +156,11 @@ update_kernel_weights <- function(X, y, LD, tau){
 
   abs_cor_vals = abs(cor_vals) ## abs. values of correlations
 
-  current_obj = max(abs_cor_vals) ## objective function
-
   idx = which(abs_cor_vals == max(abs_cor_vals))[1] ## which top feature that has highest correlation
 
   dist = sqrt(abs(LD[,idx])) ## overall kernel intensities around the top feature
 
-  exp_abs_cor_vals = exp(abs_cor_vals*dist/tau)+1e-05 ## optimal kernel smoothing
+  exp_abs_cor_vals = exp(abs_cor_vals*dist/tau)+1e-10 ## optimal kernel smoothing
 
   if(any(is.infinite(exp_abs_cor_vals))){
     stop("weights out of bounds, please choose a larger tau")
@@ -170,9 +168,43 @@ update_kernel_weights <- function(X, y, LD, tau){
 
   weights= exp_abs_cor_vals/sum(exp_abs_cor_vals) ## updated weight at this iteration step
 
+  current_obj = sum(weights*dist*abs_cor_vals) ## objective function
+
   ll = list("weights" = weights,
+            "kernel_wt" = dist,
             "objective" = current_obj,
             "corvals" = cor_vals)
   return(ll)
 }
 
+
+######### A function to update the coefficient vector without kernel smoothing  #######
+
+#' @title One instance of the no kernel smoothed general FS-boost weights update
+#' @param X   The design matrix X (N times P) with samples/individuals along the rows
+#'            and putatively correlated ordered features (SNPs) along the columns.
+#' @param y  The response vector of length N
+#' @return An object with the following items
+#'   \item{weights}{A new vector of weights of length P based on kernel smoothing around the top feature.}
+#'   \item{objective}{The current value of the objective to be minimized.}
+#'   \item{corvals}{The current values of correlations of the P features with the current residual.}
+#' @export
+#'
+update_non_kernel_weights <- function(X, y){
+
+  cor_vals = apply(X, 2, function(z) return(cor(z, y))) ## corr. of X.columns and z
+
+  abs_cor_vals = abs(cor_vals) ## abs. values of correlations
+
+  idx = which(abs_cor_vals == max(abs_cor_vals))[1] ## which top feature that has highest correlation
+
+  weights = rep(0, ncol(X))
+  weights[idx] = 1 ## updated weight at this iteration step
+
+  current_obj = sum(weights*abs_cor_vals) ## objective function
+
+  ll = list("weights" = weights,
+            "objective" = current_obj,
+            "corvals" = cor_vals)
+  return(ll)
+}

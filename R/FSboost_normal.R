@@ -1,9 +1,8 @@
-#' @title A genetic fine-mapping method using kernel-based Forward Stepwise boosted regression model.
+#' @title Normal non-kernel based Forward Stepwise boosted regression model.
 #'
-#' @description This function uses a kernel-based FS-boost framework to find causal fine-mapped SNP sets
-#' from GWAS or QTL effect size data. It performs a regression  \eqn{Y = Xb + e} where b is a sparse vector
-#' of coefficients with local signal clusters. Unlike other fine-mapping methods, our algorithm is model-free
-#' on the coefficients b.
+#' @description This function uses a non-kernel-based FS-boost framework to find causal effect sizes in
+#' regression  \eqn{Y = Xb + e} where b is a sparse vector of coefficients. This is more a boosting method
+#' to find sparse solutions to b and not a fine-mapping driven method.
 #'
 #' @param X   The design matrix X (N times P) with samples/individuals along the rows
 #'            and putatively correlated ordered features (SNPs) along the columns.
@@ -60,7 +59,7 @@
 
 
 
-fineboost_normal <- function(X, Y, M=1000,
+FSboost_normal <- function(X, Y, M=1000,
                              Lmax=5, LD = NULL,
                              step = 0.05, kern_tau = 0.01,
                              stop_thresh = 1e-04, na.rm=FALSE,
@@ -113,7 +112,7 @@ fineboost_normal <- function(X, Y, M=1000,
 
   for(m in 1:M){
 
-    newll = update_kernel_weights(attr(X, "scaledX"), res, attr(X, "LD"), tau = kern_tau)
+    newll = update_non_kernel_weights(attr(X, "scaledX"), res)
 
     ff$obj_path = c(ff$obj_path, newll$objective)
 
