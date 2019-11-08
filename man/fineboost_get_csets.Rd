@@ -4,7 +4,7 @@
 \alias{fineboost_get_csets}
 \title{Get confidence sets for local signal clusters from FineBoost output}
 \usage{
-fineboost_get_csets(ff, coverage = 0.95, clus_thresh = 0.1,
+fineboost_get_csets(ff, X, coverage = 0.95, clus_thresh = 0.1,
   nmf_try = 10)
 }
 \arguments{

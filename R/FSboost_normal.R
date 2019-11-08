@@ -158,7 +158,7 @@ FSboost_normal <- function(X, Y, M=1000,
 
   #############  Post-processing of the Fineboost updates  #####################
 
-  ff$csets = fineboost_get_csets(ff, coverage=coverage, clus_thresh = clus_thresh, nmf_try = nmf_try)
+  ff$csets = fineboost_get_csets(ff, X, coverage=coverage, clus_thresh = clus_thresh, nmf_try = nmf_try)
   ff$ccg = fineboost_get_ccg(ff, use_csets = TRUE)
   ff$beta = fineboost_get_coef(X, Y, ff)
   return(ff)

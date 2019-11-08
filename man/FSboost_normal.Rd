@@ -5,9 +5,9 @@
 \title{Normal non-kernel based Forward Stepwise boosted regression model.}
 \usage{
 FSboost_normal(X, Y, M = 1000, Lmax = 5, LD = NULL, step = 0.05,
-  kern_tau = 0.01, stop_thresh = 1e-04, na.rm = FALSE,
-  intercept = TRUE, standardize = TRUE, coverage = 0.95,
-  clus_thresh = 0.1, nmf_try = 5, verbose = TRUE)
+  stop_thresh = 1e-04, na.rm = FALSE, intercept = TRUE,
+  standardize = TRUE, coverage = 0.95, clus_thresh = 0.1,
+  nmf_try = 5, verbose = TRUE)
 }
 \arguments{
 \item{X}{The design matrix X (N times P) with samples/individuals along the rows
@@ -22,8 +22,6 @@ and putatively correlated ordered features (SNPs) along the columns.}
 \item{LD}{The external LD matrix for the P features of interest. Defaults to NULL, in which case, in-sample LD is used.}
 
 \item{step}{The stepsize used in boosting iterations. Default set to 0.05.}
-
-\item{kern_tau}{The smoothing intensity of the kernel averaging at each boosting iteration. Default set to 0.01.}
 
 \item{stop_thresh}{The stopping threshold (small number) for the objective function, when attained,
 the boosting iterations will stop automatically. Default is 0.1.}

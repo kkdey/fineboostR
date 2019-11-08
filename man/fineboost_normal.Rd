@@ -4,7 +4,7 @@
 \alias{fineboost_normal}
 \title{A genetic fine-mapping method using kernel-based Forward Stepwise boosted regression model.}
 \usage{
-fineboost_normal(X, Y, M = 1000, Lmax = 5, LD = NULL, step = 0.05,
+fineboost_normal(X, Y, M = 1000, Lmax = 5, LD = NULL, step = 0.1,
   kern_tau = 0.01, stop_thresh = 1e-04, na.rm = FALSE,
   intercept = TRUE, standardize = TRUE, coverage = 0.95,
   clus_thresh = 0.1, nmf_try = 5, verbose = TRUE)

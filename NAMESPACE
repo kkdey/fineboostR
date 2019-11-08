@@ -3,6 +3,7 @@
 export(FSboost_normal)
 export(calc_tau)
 export(fineboost_get_ccg)
+export(fineboost_get_coef)
 export(fineboost_get_csets)
 export(fineboost_normal)
 export(set_X_attributes)
