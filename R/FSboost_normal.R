@@ -17,8 +17,6 @@
 #'
 #' @param step The stepsize used in boosting iterations. Default set to 0.05.
 #'
-#' @param kern_tau The smoothing intensity of the kernel averaging at each boosting iteration. Default set to 0.01.
-#'
 #' @param stop_thresh The stopping threshold (small number) for the objective function, when attained,
 #'                    the boosting iterations will stop automatically. Default is 0.1.
 #'
@@ -61,7 +59,7 @@
 
 FSboost_normal <- function(X, Y, M=1000,
                              Lmax=5, LD = NULL,
-                             step = 0.05, kern_tau = 0.01,
+                             step = 0.05,
                              stop_thresh = 1e-04, na.rm=FALSE,
                              intercept=TRUE, standardize=TRUE,
                              coverage = 0.95, clus_thresh=0.1,
@@ -116,15 +114,12 @@ FSboost_normal <- function(X, Y, M=1000,
 
       ff$obj_path = c(ff$obj_path, newll$objective)
 
-      #if(ff$obj_path[length(ff$obj_path)] > ff$obj_path[length(ff$obj_path) - 1]+ 0.1){
-      #  stop("objective value increases over iterations; possible model mismatch")
-      #}
-
-      if(ff$obj_path[length(ff$obj_path)-1] - ff$obj_path[length(ff$obj_path)] < stop_thresh &&
-         ff$obj_path[length(ff$obj_path)-1] > (ff$obj_path[length(ff$obj_path)]+1e-12)){
-        cat("Boosting iterations converge after", m, "iterations! \n")
-        break;
+      if(newll$objective > 0.5){
+        step1 = 0.5
+      }else{
+        step1 = step
       }
+
 
       ff$weights_path = rbind(ff$weights_path, newll$weights)
 
@@ -138,6 +133,15 @@ FSboost_normal <- function(X, Y, M=1000,
 
       ff$profile_loglik = c(ff$profile_loglik, sum((Y - attr(X, "scaled")%*%ff$beta)^2))
       #ff$profile_loglik = c(ff$profile_loglik, max(abs(Y - attr(X, "scaled")%*%ff$beta)))
+
+      if((ff$obj_path[length(ff$obj_path)-1] - ff$obj_path[length(ff$obj_path)] < stop_thresh &&
+          newll$objective < 0.1) || (ff$profile_loglik[length(ff$profile_loglik)-1] -
+                                     ff$profile_loglik[length(ff$profile_loglik)] < stop_thresh &&
+                                     ff$profile_loglik[length(ff$profile_loglik)]/ff$profile_loglik[1] < 1e-02))
+      {
+        cat("Boosting iterations converge after", m, "iterations! \n")
+        break;
+      }
 
       if(verbose){
         cat(paste0("objective:", newll$objective, "at iteration:", m, "\n"))
@@ -156,5 +160,6 @@ FSboost_normal <- function(X, Y, M=1000,
 
   ff$csets = fineboost_get_csets(ff, coverage=coverage, clus_thresh = clus_thresh, nmf_try = nmf_try)
   ff$ccg = fineboost_get_ccg(ff, use_csets = TRUE)
+  ff$beta = fineboost_get_coef(X, Y, ff)
   return(ff)
 }
