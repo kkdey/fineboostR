@@ -62,7 +62,7 @@
 
 fineboost_normal <- function(X, Y, M=1000,
                              Lmax=5, LD = NULL,
-                             step = 0.05, kern_tau = 0.01,
+                             step = 0.1, kern_tau = 0.01,
                              stop_thresh = 1e-04, na.rm=FALSE,
                              intercept=TRUE, standardize=TRUE,
                              coverage = 0.95, clus_thresh=0.1,
@@ -113,7 +113,7 @@ fineboost_normal <- function(X, Y, M=1000,
 
   for(m in 1:M){
 
-    newll = update_kernel_weights(attr(X, "scaledX"), res, attr(X, "LD"), tau = kern_tau)
+    newll = update_kernel_weights(attr(X, "scaled"), res, attr(X, "LD"), tau = kern_tau)
 
     ff$obj_path = c(ff$obj_path, newll$objective)
 
@@ -121,24 +121,34 @@ fineboost_normal <- function(X, Y, M=1000,
     #  stop("objective value increases over iterations; possible model mismatch")
     #}
 
-    if(ff$obj_path[length(ff$obj_path)-1] - ff$obj_path[length(ff$obj_path)] < stop_thresh &&
-       ff$obj_path[length(ff$obj_path)-1] > (ff$obj_path[length(ff$obj_path)]+1e-12)){
-      cat("Boosting iterations converge after", m, "iterations! \n")
-      break;
+
+    if(newll$objective > 0.5){
+      step1 = 0.5
+    }else{
+      step1 = step
     }
 
     ff$weights_path = rbind(ff$weights_path, newll$weights)
 
     beta_grad = newll$weights*sign(newll$corvals) ## gradient of objective function wrt b
 
-    res = res - step*(attr(X, "scaledX") %*% (beta_grad)) ## Gradient Descent on residuals
+    res = res - step1*(attr(X, "scaled") %*% (beta_grad)) ## Gradient Descent on residuals
 
-    ff$beta = ff$beta + step*beta_grad ## Gradient ascent on b
+    ff$beta = ff$beta + step1*beta_grad ## Gradient ascent on b
 
     ff$beta_path = rbind(ff$beta_path, ff$beta)
 
-    ff$profile_loglik = c(ff$profile_loglik, sum((Y - attr(X, "scaledX")%*%ff$beta)^2))
-    #ff$profile_loglik = c(ff$profile_loglik, max(abs(Y - attr(X, "scaledX")%*%ff$beta)))
+    ff$profile_loglik = c(ff$profile_loglik, sum((Y - attr(X, "scaled")%*%ff$beta)^2))
+    #ff$profile_loglik = c(ff$profile_loglik, max(abs(Y - attr(X, "scaled")%*%ff$beta)))
+
+    if((ff$obj_path[length(ff$obj_path)-1] - ff$obj_path[length(ff$obj_path)] < stop_thresh &&
+        newll$objective < 0.1) || (ff$profile_loglik[length(ff$profile_loglik)-1] -
+                                   ff$profile_loglik[length(ff$profile_loglik)] < stop_thresh &&
+                                   ff$profile_loglik[length(ff$profile_loglik)]/ff$profile_loglik[1] < 1e-02))
+    {
+      cat("Boosting iterations converge after", m, "iterations! \n")
+      break;
+    }
 
     if(verbose){
       cat(paste0("objective:", newll$objective, "at iteration:", m, "\n"))
@@ -155,7 +165,8 @@ fineboost_normal <- function(X, Y, M=1000,
 
   #############  Post-processing of the Fineboost updates  #####################
 
-  ff$csets = fineboost_get_csets(ff, coverage=coverage, clus_thresh = clus_thresh, nmf_try = nmf_try)
-  ff$ccg = fineboost_get_ccg(ff, use_csets = TRUE)
+  ff$csets = fineboost_get_csets(ff, X, coverage=coverage, clus_thresh = clus_thresh, nmf_try = nmf_try)
+  ff$ccg =  fineboost_get_ccg(ff, use_csets = FALSE)
+  ff$beta = fineboost_get_coef(X, Y, ff)
   return(ff)
 }

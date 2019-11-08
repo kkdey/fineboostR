@@ -67,85 +67,85 @@ FSboost_normal <- function(X, Y, M=1000,
                              coverage = 0.95, clus_thresh=0.1,
                              nmf_try = 5, verbose=TRUE){
 
-  if (!(is.double(X) & is.matrix(X)) & !inherits(X,"CsparseMatrix") & is.null(attr(X,"matrix.type")))
-    stop("Input X must be a double-precision matrix, or a sparse matrix, or a trend filtering matrix.")
-  if (any(is.na(X))) {
-    stop("Input X must not contain missing values.")
-  }
-  if (any(is.na(Y))) {
-    if (na.rm) {
-      samples_kept = which(!is.na(Y))
-      Y = Y[samples_kept]
-      X = X[samples_kept,]
-    } else {
-      stop("Input Y must not contain missing values.")
+    if (!(is.double(X) & is.matrix(X)) & !inherits(X,"CsparseMatrix") & is.null(attr(X,"matrix.type")))
+      stop("Input X must be a double-precision matrix, or a sparse matrix, or a trend filtering matrix.")
+    if (any(is.na(X))) {
+      stop("Input X must not contain missing values.")
     }
-  }
-  p = ncol(X)
-  n = nrow(X)
-  mean_y = mean(Y)
+    if (any(is.na(Y))) {
+      if (na.rm) {
+        samples_kept = which(!is.na(Y))
+        Y = Y[samples_kept]
+        X = X[samples_kept,]
+      } else {
+        stop("Input Y must not contain missing values.")
+      }
+    }
+    p = ncol(X)
+    n = nrow(X)
 
-  if(intercept){
-    Y = Y-mean_y
-  }
-  X = set_X_attributes(X,center=intercept, scale=standardize)
-
-
-
-  ##################  initialization #######################################
-
-  ff = list("N" = nrow(X),
-            "P" = ncol(X),
-            "Lmax" = Lmax,
-            "beta" = rep(0, dim(X)[2]),
-            "beta_path" = c(),
-            "weights_path" = c(),
-            "profile_loglik" = c(),
-            "obj_path" = 9999999)
-  class(ff) = "fineboost"
-
-  current_obj=10^4
-  mm=1
-  res = Y
-
-  ##################  Fineboost updates   ###################################
-
-  for(m in 1:M){
-
-    newll = update_non_kernel_weights(attr(X, "scaledX"), res)
-
-    ff$obj_path = c(ff$obj_path, newll$objective)
-
-    #if(ff$obj_path[length(ff$obj_path)] > ff$obj_path[length(ff$obj_path) - 1]+ 0.1){
-    #  stop("objective value increases over iterations; possible model mismatch")
-    #}
-
-    if(ff$obj_path[length(ff$obj_path)-1] - ff$obj_path[length(ff$obj_path)] < stop_thresh &&
-       ff$obj_path[length(ff$obj_path)-1] > (ff$obj_path[length(ff$obj_path)]+1e-12)){
-      cat("Boosting iterations converge after", m, "iterations! \n")
-      break;
+    if(intercept){
+      Y = Y-mean(Y)
     }
 
-    ff$weights_path = rbind(ff$weights_path, newll$weights)
+    X = set_X_attributes(X,center=intercept, scale=standardize)
 
-    beta_grad = newll$weights*sign(newll$corvals) ## gradient of objective function wrt b
 
-    res = res - step*(attr(X, "scaledX") %*% (beta_grad)) ## Gradient Descent on residuals
 
-    ff$beta = ff$beta + step*beta_grad ## Gradient ascent on b
+    ##################  initialization #######################################
 
-    ff$beta_path = rbind(ff$beta_path, ff$beta)
+    ff = list("N" = nrow(X),
+              "P" = ncol(X),
+              "Lmax" = Lmax,
+              "beta" = rep(0, dim(X)[2]),
+              "beta_path" = c(),
+              "weights_path" = c(),
+              "profile_loglik" = c(),
+              "obj_path" = 9999999)
+    class(ff) = "fineboost"
 
-    ff$profile_loglik = c(ff$profile_loglik, sum((Y - attr(X, "scaledX")%*%ff$beta)^2))
-    #ff$profile_loglik = c(ff$profile_loglik, max(abs(Y - attr(X, "scaledX")%*%ff$beta)))
+    current_obj=10^4
+    mm=1
+    res = Y
 
-    if(verbose){
-      cat(paste0("objective:", newll$objective, "at iteration:", m, "\n"))
+    ##################  Fineboost updates   ###################################
+
+    for(m in 1:M){
+
+      newll = update_non_kernel_weights(attr(X, "scaled"), res)
+
+      ff$obj_path = c(ff$obj_path, newll$objective)
+
+      #if(ff$obj_path[length(ff$obj_path)] > ff$obj_path[length(ff$obj_path) - 1]+ 0.1){
+      #  stop("objective value increases over iterations; possible model mismatch")
+      #}
+
+      if(ff$obj_path[length(ff$obj_path)-1] - ff$obj_path[length(ff$obj_path)] < stop_thresh &&
+         ff$obj_path[length(ff$obj_path)-1] > (ff$obj_path[length(ff$obj_path)]+1e-12)){
+        cat("Boosting iterations converge after", m, "iterations! \n")
+        break;
+      }
+
+      ff$weights_path = rbind(ff$weights_path, newll$weights)
+
+      beta_grad = newll$weights*sign(newll$corvals) ## gradient of objective function wrt b
+
+      res = res - step*(attr(X, "scaled") %*% (beta_grad)) ## Gradient Descent on residuals
+
+      ff$beta = ff$beta + step*beta_grad ## Gradient ascent on b
+
+      ff$beta_path = rbind(ff$beta_path, ff$beta)
+
+      ff$profile_loglik = c(ff$profile_loglik, sum((Y - attr(X, "scaled")%*%ff$beta)^2))
+      #ff$profile_loglik = c(ff$profile_loglik, max(abs(Y - attr(X, "scaled")%*%ff$beta)))
+
+      if(verbose){
+        cat(paste0("objective:", newll$objective, "at iteration:", m, "\n"))
+      }
     }
-  }
 
-  ff$num_updates = m
-  ff$obj_path = ff$obj_path[-1]
+    ff$num_updates = m
+    ff$obj_path = ff$obj_path[-1]
 
   if(m == M){
     warning(paste("Fineboost updates did not converge in", M, "iterations; checkpoint at last iteration"))

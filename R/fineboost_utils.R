@@ -10,7 +10,7 @@ fineboost_get_ccg <- function (ff, use_csets = TRUE){
   if (class(ff) == "fineboost"){
     if(!use_csets){
       ccg = rep(0, ff$P)
-      ccg[which(ff$csets$csets_index > 0)] = apply(ff$csets$cluster_signal[, which(ff$csets$csets_index > 0)],
+      ccg[which(ff$csets$csets_index > 0)] = apply(ff$csets$cluster_signal[, which(ff$csets$csets_index > 0), drop=F],
                                                    2, function(x) return(max(x)))
       return(ccg)
     }
@@ -54,6 +54,7 @@ fineboost_get_ccg <- function (ff, use_csets = TRUE){
 #' @export
 #'
 fineboost_get_csets <- function (ff,
+                                 X,
                                  coverage = 0.95,
                                  clus_thresh = 0.1,
                                  nmf_try = 10){
@@ -69,9 +70,10 @@ fineboost_get_csets <- function (ff,
       for(k in 1:Lmax){
         idx = which(W2[,k] > 0.5)
         if(length(idx) > 0){
-          clus_med = rbind(clus_med, apply(ff$weights_path[idx, , drop=F], 2, median))
+          cc = apply(ff$weights_path[idx, , drop=F], 2, median)
+          clus_med = rbind(clus_med, cc/sum(cc))
+          presence_prop = c(presence_prop, length(idx)/nrow(W2))
         }
-        presence_prop = c(presence_prop, length(idx)/nrow(W2))
       }
 
       confidence_sets = list()
@@ -81,10 +83,18 @@ fineboost_get_csets <- function (ff,
       }
 
       evidence_strength = presence_prop
-      confidence_sets_1 = confidence_sets[order(presence_prop,
+      for(ee in 1:length(evidence_strength)){
+        temp2 = min(abs(attr(X, "LD"))[confidence_sets[[ee]], confidence_sets[[ee]]])
+        if(temp2 < 0.5){temp2 = 0}
+        evidence_strength[ee] = evidence_strength[ee]*temp2
+      }
+
+      confidence_sets_1 = confidence_sets[order(evidence_strength,
                                                 decreasing = T)]
-      confidence_sets_2 = confidence_sets[order(presence_prop,
+      confidence_sets_2 = confidence_sets[order(evidence_strength,
                                                 decreasing = T)[1:length(which(evidence_strength > clus_thresh))]]
+      evidence_strength = sort(evidence_strength, decreasing = T)
+
       csets_index = rep(0, ff$P)
       for(kk in 1:length(confidence_sets_2)){
         csets_index[confidence_sets_2[[kk]]] = kk
@@ -168,7 +178,7 @@ update_kernel_weights <- function(X, y, LD, tau){
 
   weights= exp_abs_cor_vals/sum(exp_abs_cor_vals) ## updated weight at this iteration step
 
-  current_obj = sum(weights*dist*abs_cor_vals) ## objective function
+  current_obj = tau*matrixStats::logSumExp(abs_cor_vals/tau) - tau*log(ncol(X)) ## objective function
 
   ll = list("weights" = weights,
             "kernel_wt" = dist,

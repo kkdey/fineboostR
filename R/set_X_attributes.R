@@ -33,7 +33,7 @@ set_X_attributes = function(X,
     # get column means
     cm = Matrix::colMeans(X, na.rm = TRUE)
     # get column standard deviations
-    csd = compute_colSds(X)
+    csd = compute_colnorm(X)
     # set sd = 1 when the column has variance 0
     csd[csd == 0] = 1
     if (!center) {
@@ -42,12 +42,12 @@ set_X_attributes = function(X,
     if (!scale) {
       csd = rep(1, length = length(cm))
     }
-    X.std = (t(X) - cm) / csd
+    X.std = (t(X) - cm) /csd
     # set three attributes for X
     attr(X, "d") <- Matrix::rowSums(X.std * X.std)
     attr(X, "scaled:center") <- cm
     attr(X, "scaled:scale") <- csd
-    attr(X, "scaledX") <- t(X.std)
+    attr(X, "scaled") <- t(X.std)
     if(!is.null(LD)){
       if(!isSymmetric(LD)){
         stop("external LD matrix must be a symmetric psd matrix on P variables")
@@ -57,7 +57,7 @@ set_X_attributes = function(X,
       }
       attr(X, "LD") <- LD
     }else{
-      attr(X, "LD") <- cor(attr(X, "scaledX"))
+      attr(X, "LD") <- cor(attr(X, "scaled"))
     }
   }
   return(X)
@@ -72,3 +72,12 @@ compute_colSds = function(X){
   n = nrow(X)
   return(sqrt((colSums(X^2)/n - (colSums(X)/n)^2)*(n/(n-1))))
 }
+
+#' @title computes column L2 norm for any type of matrix
+#' @param X an n by p matrix of any type, e.g. sparse, dense
+#' @return a p vector of column L-2 norms
+compute_colnorm = function(X){
+  return(sqrt(colSums(X^2)))
+}
+
+
