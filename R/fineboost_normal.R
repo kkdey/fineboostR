@@ -20,6 +20,14 @@
 #'
 #' @param kern_tau The smoothing intensity of the kernel averaging at each boosting iteration. Default set to 0.01.
 #'
+#' @param method The boosting update method- either `LS` or `FS` indicating the LS-Boost and FS-epsilon methods respectively.
+#'               Default is set to LS-Boost.
+#'
+#' @param kernel The nature of the kernel used for smoothing. Can be either `L1`, `L2`, `epanechnikov` or `prune`. `L1`
+#'               kernel uses a L-1 norm based kernel, `L2` uses a L-2 norm based kernel, `epanechnikov` uses an
+#'               Epanechnikov kernel and `prune` uses a uniform kernel on all SNPs with high LD to the optimal SNP at
+#'               each boosting iteration.
+#'
 #' @param stop_thresh The stopping threshold (small number) for the objective function, when attained,
 #'                    the boosting iterations will stop automatically. Default is 0.1.
 #'
@@ -63,6 +71,8 @@
 fineboost_normal <- function(X, Y, M=1000,
                              Lmax=5, LD = NULL,
                              step = 0.1, kern_tau = 0.01,
+                             method = "LS",
+                             kernel = "L2",
                              stop_thresh = 1e-04, na.rm=FALSE,
                              intercept=TRUE, standardize=TRUE,
                              coverage = 0.95, clus_thresh=0.1,
@@ -108,43 +118,51 @@ fineboost_normal <- function(X, Y, M=1000,
   current_obj=10^4
   mm=1
   res = Y
+  step1 = step
 
   ##################  Fineboost updates   ###################################
 
   for(m in 1:M){
 
-    newll = update_kernel_weights(attr(X, "scaled"), res, attr(X, "LD"), tau = kern_tau)
+    newll = update_kernel_weights(attr(X, "scaled"), res, attr(X, "LD"), tau = kern_tau, kernel = kernel)
 
     ff$obj_path = c(ff$obj_path, newll$objective)
-
-    #if(ff$obj_path[length(ff$obj_path)] > ff$obj_path[length(ff$obj_path) - 1]+ 0.1){
-    #  stop("objective value increases over iterations; possible model mismatch")
-    #}
-
-
-    if(newll$objective > 0.5){
-      step1 = 0.5
-    }else{
-      step1 = step
-    }
 
     ff$weights_path = rbind(ff$weights_path, newll$weights)
 
     beta_grad = newll$weights*sign(newll$corvals) ## gradient of objective function wrt b
 
-    res = res - step1*(attr(X, "scaled") %*% (beta_grad)) ## Gradient Descent on residuals
+    prediction = (attr(X, "scaled") %*% (beta_grad))
+
+    if(method == "LS"){
+      if(newll$objective > 0.5){
+        step1 = calc_step(prediction, res, step1)
+      }else{
+        step1 = step
+      }
+    }else if(method == "FS"){
+      if(newll$objective > 0.5){
+       step1 = 0.5
+      }else{
+       step1 = step
+      }
+    }else if(method != 'FS'){
+      stop("The boosting method has to be either LS or FS; denoting LS-Boost and FS-epsilon type updates.")
+    }
+
+    res = res - step1*prediction   ## Gradient Descent on residuals
 
     ff$beta = ff$beta + step1*beta_grad ## Gradient ascent on b
 
     ff$beta_path = rbind(ff$beta_path, ff$beta)
 
-    ff$profile_loglik = c(ff$profile_loglik, sum((Y - attr(X, "scaled")%*%ff$beta)^2))
+    ff$profile_loglik = c(ff$profile_loglik, mean((Y - attr(X, "scaled")%*%ff$beta)^2))
     #ff$profile_loglik = c(ff$profile_loglik, max(abs(Y - attr(X, "scaled")%*%ff$beta)))
 
-    if((ff$obj_path[length(ff$obj_path)-1] - ff$obj_path[length(ff$obj_path)] < stop_thresh &&
+    if(((ff$obj_path[length(ff$obj_path)-1] - ff$obj_path[length(ff$obj_path)] < stop_thresh &&
         newll$objective < 0.1) || (ff$profile_loglik[length(ff$profile_loglik)-1] -
                                    ff$profile_loglik[length(ff$profile_loglik)] < stop_thresh &&
-                                   ff$profile_loglik[length(ff$profile_loglik)]/ff$profile_loglik[1] < 1e-02))
+                                   ff$profile_loglik[length(ff$profile_loglik)]/ff$profile_loglik[1] < 1e-02)))
     {
       cat("Boosting iterations converge after", m, "iterations! \n")
       break;
