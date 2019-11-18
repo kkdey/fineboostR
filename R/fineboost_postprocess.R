@@ -84,6 +84,12 @@ fineboost_get_csets <- function (ff,
           presence_prop = c(presence_prop, length(idx)/nrow(W2))
         }
       }
+      if(length(!is.na(rowSums(clus_med))) > 0){
+        idxx = which(!is.na(rowSums(clus_med)))
+        clus_med = clus_med[idxx, ,drop=F]
+        presence_prop = presence_prop[idxx]
+      }
+
 
       confidence_sets = list()
       for(mm in 1:nrow(clus_med)){
