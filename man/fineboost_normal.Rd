@@ -5,9 +5,11 @@
 \title{A genetic fine-mapping method using kernel-based Forward Stepwise boosted regression model.}
 \usage{
 fineboost_normal(X, Y, M = 1000, Lmax = 5, LD = NULL, step = 0.1,
-  kern_tau = 0.01, stop_thresh = 1e-04, na.rm = FALSE,
-  intercept = TRUE, standardize = TRUE, coverage = 0.95,
-  clus_thresh = 0.1, nmf_try = 5, verbose = TRUE)
+  kern_tau = 0.01, method = "LS", kernel = "L2",
+  stop_thresh = 1e-04, na.rm = FALSE, intercept = TRUE,
+  standardize = TRUE, coverage = 0.95, clus_thresh = 0.1,
+  min_within_LD = 0.5, min_between_LD = 0.25,
+  min_clus_centrality = 0.5, nmf_try = 5, verbose = TRUE)
 }
 \arguments{
 \item{X}{The design matrix X (N times P) with samples/individuals along the rows
@@ -25,6 +27,14 @@ and putatively correlated ordered features (SNPs) along the columns.}
 
 \item{kern_tau}{The smoothing intensity of the kernel averaging at each boosting iteration. Default set to 0.01.}
 
+\item{method}{The boosting update method- either `LS` or `FS` indicating the LS-Boost and FS-epsilon methods respectively.
+Default is set to LS-Boost.}
+
+\item{kernel}{The nature of the kernel used for smoothing. Can be either `L1`, `L2`, `epanechnikov` or `prune`. `L1`
+kernel uses a L-1 norm based kernel, `L2` uses a L-2 norm based kernel, `epanechnikov` uses an
+Epanechnikov kernel and `prune` uses a uniform kernel on all SNPs with high LD to the optimal SNP at
+each boosting iteration.}
+
 \item{stop_thresh}{The stopping threshold (small number) for the objective function, when attained,
 the boosting iterations will stop automatically. Default is 0.1.}
 
@@ -37,14 +47,18 @@ the boosting iterations will stop automatically. Default is 0.1.}
 \item{coverage}{A number between 0 and 1 (close to 1) specifying the coverage of the estimated signal clusters.
 Default set to 0.95.}
 
-\item{clus_thresh}{A number between 0 and 1 (close to 0) that is used to filter out local signal clusters with
-depleted number of boosting iterations and high level of uniformity of signal. Default is
-set to 0.1.}
+\item{min_within_LD}{The minimum value of LD permitted for SNPs within a local signal cluster. Default is 0.25.}
+
+\item{min_between_LD}{The minimum value of LD permitted for SNPs across two local signal clusters. Default is it
+cannot exceed 0.25.}
 
 \item{nmf_try}{The number of NMF initiializations to fix the confidence sets. Default is set to 5.}
 
 \item{verbose}{If \code{verbose = TRUE}, information about the objective and progress at each iteration of the
 kerne-based boosting procedure is returned.}
+
+\item{min_cluster_centrality}{The minimum value of cluster centrailty required for a SNP to make the cut in a
+local signal cluster. Default is set at 0.5.}
 
 \item{min_abs_corr}{Minimum of absolute value of correlation allowed in a credible set. The default, 0.5,
 corresponds to squared correlation of 0.25, which is a commonly used threshold for

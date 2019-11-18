@@ -4,7 +4,7 @@
 \alias{update_kernel_weights}
 \title{One instance of the kernel-smoothed FS-boost weights update}
 \usage{
-update_kernel_weights(X, y, LD, tau)
+update_kernel_weights(X, y, LD, tau, kernel = "L2")
 }
 \arguments{
 \item{X}{The design matrix X (N times P) with samples/individuals along the rows

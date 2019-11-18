@@ -4,36 +4,36 @@
 \alias{fineboost_get_csets}
 \title{Get confidence sets for local signal clusters from FineBoost output}
 \usage{
-fineboost_get_csets(ff, X, coverage = 0.95, clus_thresh = 0.1,
-  nmf_try = 10)
+fineboost_get_csets(ff, X, coverage = 0.95, min_within_LD = 0.5,
+  min_between_LD = 0.25, min_clus_centrality = 0.5, nmf_try = 5)
 }
 \arguments{
-\item{ff}{an object of class fineboos, generated from `fineboostR::fineboost_smooth()`}
+\item{ff}{an object of class fineboost, generated from `fineboostR::fineboost_smooth()`}
+
+\item{X}{The attributed X matrix (N times P) obtained using `fineboostR::set_X_attributes()`.}
 
 \item{coverage}{A number between 0 and 1 (close to 1) specifying the coverage of the estimated signal clusters.
-Default set to 0.95.}
+Default set to 0.90.}
 
-\item{clus_thresh}{A number between 0 and 1 (close to 0) that is used to filter out local signal clusters with
-depleted number of boosting iterations and high level of uniformity of signal. Default is
-set to 0.1.}
+\item{min_within_LD}{The minimum value of LD permitted for SNPs within a local signal cluster. Default is 0.25.}
+
+\item{min_between_LD}{The minimum value of LD permitted for SNPs across two local signal clusters. Default is it
+cannot exceed 0.25.}
 
 \item{nmf_try}{Number of initializations of the Non-negative matrix factorization on the trajectory of weights
 tested. Default is set to 10.}
 
-\item{LD}{the LD P times P matrix, where P is the number of features, equal to ff$P,}
-
-\item{min_abs_corr}{Minimum of absolute value of correlation allowed in a credible set. The default, 0.5,
-corresponds to squared correlation of 0.25, which is a commonly used threshold for
-genotype data in genetics studies.}
+\item{min_cluster_centrality}{The minimum value of cluster centrailty required for a SNP to make the cut in a
+local signal cluster. Default is set at 0.5.}
 }
 \value{
 An object with the following items
-  \item{evidence}{A vector of length `Lmax` giving the evidence strength for each of signal clusters.}
-  \item{unfiltered_sets}{A list of length `Lmax` denoting the confidence sets that contain causal signal, where the
-                        strength of confidence is provided by the coverage.}
+  \item{unfiltered_sets}{A list of length `Lmax` denoting the local signal clusters before purification.}
   \item{cluster_signal}{The cluster signal for the `unfiltered sets`.}
-  \item{filtered_sets}{The threshold used to filter away cluster signals of the evidence for that cluster falls below this
-                       threshold. Default is set at 0.1.}
+  \item{filtered_sets}{The local signal clusters that remain after purification procedure.}
+  \item{update_time}{A vector of length `Lmax` giving the proportion of boosting updates coming from that local cluster.}
+  \item{within_purity}{The maximum LD of SNPs in each individual local cluster.}
+  \item{between_purity}{The maximum LD of SNPs between any two distinct local clusters.}
   \item{csets_index}{A vector of length P that labels each variable by the confidence set in the `filtered_sets` it
                      belongs to and 0 otherwise}
 }

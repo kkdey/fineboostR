@@ -40,9 +40,12 @@
 #' @param coverage A number between 0 and 1 (close to 1) specifying the coverage of the estimated signal clusters.
 #'                 Default set to 0.95.
 #'
-#' @param clus_thresh A number between 0 and 1 (close to 0) that is used to filter out local signal clusters with
-#'                    depleted number of boosting iterations and high level of uniformity of signal. Default is
-#'                    set to 0.1.
+#' @param min_within_LD The minimum value of LD permitted for SNPs within a local signal cluster. Default is 0.25.
+#' @param min_between_LD The minimum value of LD permitted for SNPs across two local signal clusters. Default is it
+#'                       cannot exceed 0.25.
+#' @param min_cluster_centrality The minimum value of cluster centrailty required for a SNP to make the cut in a
+#'                      local signal cluster. Default is set at 0.5.
+#'
 #' @param nmf_try The number of NMF initiializations to fix the confidence sets. Default is set to 5.
 #'
 #' @param min_abs_corr Minimum of absolute value of correlation allowed in a credible set. The default, 0.5,
@@ -76,6 +79,9 @@ fineboost_normal <- function(X, Y, M=1000,
                              stop_thresh = 1e-04, na.rm=FALSE,
                              intercept=TRUE, standardize=TRUE,
                              coverage = 0.95, clus_thresh=0.1,
+                             min_within_LD = 0.5,
+                             min_between_LD = 0.25,
+                             min_clus_centrality = 0.5,
                              nmf_try = 5, verbose=TRUE){
 
   if (!(is.double(X) & is.matrix(X)) & !inherits(X,"CsparseMatrix") & is.null(attr(X,"matrix.type")))
@@ -183,7 +189,11 @@ fineboost_normal <- function(X, Y, M=1000,
 
   #############  Post-processing of the Fineboost updates  #####################
 
-  ff$csets = fineboost_get_csets(ff, X, coverage=coverage, clus_thresh = clus_thresh, nmf_try = nmf_try)
+  ff$csets = fineboost_get_csets(ff, X, coverage=coverage,
+                                 min_within_LD = min_within_LD,
+                                 min_between_LD = min_between_LD,
+                                 min_clus_centrality = min_clus_centrality,
+                                 nmf_try = nmf_try)
   ff$ccg =  fineboost_get_ccg(ff, use_csets = FALSE)
   ff$beta = fineboost_get_coef(X, Y, ff)
   return(ff)
