@@ -67,11 +67,15 @@ fineboost_get_csets <- function (ff,
                                  nmf_try = 5){
   if (class(ff) == "fineboost"){
     vx = vector(mode="list", nmf_try)
-    ff$weights_path = ff$weights_path[1:floor(0.95*nrow(ff$weights_path)),]
-    ff$weights_path[which(ff$weights_path < 0.01)] = 0
+    ff$weights_path = ff$weights_path[1:min(nrow(ff$weights_path),
+                                                 max(ff$Lmax*5, floor(0.95*nrow(ff$weights_path)))),]
+    ff$weights_path[which(ff$weights_path < 0.05)] = 0
     for(rr in 1:nmf_try){
       Lmax = ff$Lmax
       set.seed(rr)
+      if(Lmax > (nrow(ff$weights_path)*0.5)){
+        Lmax = floor(nrow(ff$weights_path)*0.5)
+      }
       res = NNLM::nnmf(ff$weights_path, k=Lmax, method ="scd", loss = "mse")
       W2 = t(apply(res$W, 1, function(x) return(x/sum(x))))
       clus_med = c()
