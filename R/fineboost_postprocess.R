@@ -82,7 +82,7 @@ fineboost_get_csets <- function (ff,
       presence_prop = c()
       for(k in 1:Lmax){
         idx = which(W2[,k] > 0.5)
-        if(length(idx) > ceiling(0.01*nrow(ff$weights_path))){
+        if(length(idx) >= ceiling(0.01*nrow(ff$weights_path))){
           cc = apply(ff$weights_path[idx, , drop=F], 2, median)
           clus_med = as.matrix(rbind(clus_med, cc/sum(cc)))
           presence_prop = c(presence_prop, length(idx)/nrow(W2))
@@ -151,6 +151,9 @@ fineboost_get_csets <- function (ff,
         purity_score[which(tmp2 > min_between_LD | tmp3 > 0.90)] = 0
         purity_score[which(within_purity < min_within_LD)] = 0
       }
+      if(length(evidence_strength) == 1){
+        purity_score = 1
+      }
 
 
 
@@ -184,7 +187,6 @@ fineboost_get_csets <- function (ff,
       ll2$filtered_sets[[mm]] = ll2$filtered_sets[[mm]][order(ll2$cluster_signal[mm, ll2$filtered_sets[[mm]]],
                                                               decreasing = T)]
     }
-
     return(ll2)
   }
 }
