@@ -29,9 +29,12 @@
 #' @param coverage A number between 0 and 1 (close to 1) specifying the coverage of the estimated signal clusters.
 #'                 Default set to 0.95.
 #'
-#' @param clus_thresh A number between 0 and 1 (close to 0) that is used to filter out local signal clusters with
-#'                    depleted number of boosting iterations and high level of uniformity of signal. Default is
-#'                    set to 0.1.
+#' @param min_within_LD The minimum value of LD permitted for SNPs within a local signal cluster. Default is 0.25.
+#' @param min_between_LD The minimum value of LD permitted for SNPs across two local signal clusters. Default is it
+#'                       cannot exceed 0.25.
+#' @param min_cluster_centrality The minimum value of cluster centrailty required for a SNP to make the cut in a
+#'                      local signal cluster. Default is set at 0.5.
+#'
 #' @param nmf_try The number of NMF initiializations to fix the confidence sets. Default is set to 5.
 #'
 #' @param min_abs_corr Minimum of absolute value of correlation allowed in a credible set. The default, 0.5,
