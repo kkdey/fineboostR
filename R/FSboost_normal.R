@@ -62,7 +62,10 @@ FSboost_normal <- function(X, Y, M=1000,
                              step = 0.05,
                              stop_thresh = 1e-04, na.rm=FALSE,
                              intercept=TRUE, standardize=TRUE,
-                             coverage = 0.95, clus_thresh=0.1,
+                             coverage = 0.95,
+                             min_within_LD = 0.5,
+                             min_between_LD = 0.25,
+                             min_clus_centrality = 0.5,
                              nmf_try = 5, verbose=TRUE){
 
     if (!(is.double(X) & is.matrix(X)) & !inherits(X,"CsparseMatrix") & is.null(attr(X,"matrix.type")))
@@ -158,8 +161,12 @@ FSboost_normal <- function(X, Y, M=1000,
 
   #############  Post-processing of the Fineboost updates  #####################
 
-  ff$csets = fineboost_get_csets(ff, X, coverage=coverage, clus_thresh = clus_thresh, nmf_try = nmf_try)
-  ff$ccg = fineboost_get_ccg(ff, use_csets = TRUE)
+  ff$csets = fineboost_get_csets(ff, X, coverage=coverage,
+                                 min_within_LD = min_within_LD,
+                                 min_between_LD = min_between_LD,
+                                 min_clus_centrality = min_clus_centrality,
+                                 nmf_try = nmf_try)
+  ff$ccg = fineboost_get_ccg(ff, use_csets = FALSE)
   ff$beta = fineboost_get_coef(X, Y, ff)
   return(ff)
 }
