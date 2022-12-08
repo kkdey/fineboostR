@@ -1,7 +1,7 @@
 ######### CCG : Causal confidence grade is an alternative to Posterior inclusion probability (PIP)  #######
 
 #' @title Compute inclusion confidence grade (CCG) for all variables
-#' @param ff an object of class fineboos, generated from `fineboostR::fineboost_smooth()`
+#' @param ff an object of class fineboos, generated from `fineboostR::fineboost_normal()`
 #' @param use_csets Whether to use the confidence sets when computing the ICG. Defaults to TRUE.
 #' @return a vector inclusion confidence grade for all variables.
 #' @export
@@ -35,7 +35,7 @@ fineboost_get_ccg <- function (ff, use_csets = TRUE){
 ######### Confidence sets generated from the output of Fineboost  #######
 
 #' @title Get confidence sets for local signal clusters from FineBoost output
-#' @param ff an object of class fineboost, generated from `fineboostR::fineboost_smooth()`
+#' @param ff an object of class fineboost, generated from `fineboostR::fineboost_normal()`
 #' @param X The attributed X matrix (N times P) obtained using `fineboostR::set_X_attributes()`.
 #' @param coverage A number between 0 and 1 (close to 1) specifying the coverage of the estimated signal clusters.
 #'                 Default set to 0.90.
