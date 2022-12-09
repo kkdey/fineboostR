@@ -76,7 +76,7 @@ fineboost_get_csets <- function (ff,
       if(Lmax > (nrow(ff$weights_path)*0.5)){
         Lmax = floor(nrow(ff$weights_path)*0.5)
       }
-      res = NNLM::nnmf(ff$weights_path, k=Lmax, method ="scd", loss = "mse")
+      res = NNLM::nnmf(ff$weights_path, k=Lmax, method ="scd", loss = "mse", max.iter = 5000)
       W2 = t(apply(res$W, 1, function(x) return(x/sum(x))))
       clus_med = c()
       presence_prop = c()
